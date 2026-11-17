@@ -30,12 +30,12 @@ const CACHE_KEY = "mcpcode_gh_release_v1";
 
 const DEFAULT_INFO: ReleaseInfo = {
   downloadUrl: SITE_CONFIG.downloadUrl,
-  releaseUrl: SITE_CONFIG.releasesUrl,
-  tag: `v${SITE_CONFIG.version}`,
-  filename: null,
-  sizeBytes: null,
+  releaseUrl: "https://github.com/Axz-o/MCPCode/releases/tag/v0.1.0-alpha",
+  tag: "v0.1.0-alpha",
+  filename: "MCP.Code_0.1.0_x64-setup.exe",
+  sizeBytes: 25421544,
   stars: null,
-  isDirectAsset: false,
+  isDirectAsset: true,
 };
 
 function pickWindowsAsset(assets: GitHubAsset[]): GitHubAsset | null {
