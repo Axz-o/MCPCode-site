@@ -15,8 +15,10 @@ import {
   Newspaper,
   Terminal,
   ShieldCheck,
+  Star,
 } from "lucide-react";
 import { SITE_CONFIG, withBasePath } from "@/lib/site";
+import { useGitHubRelease } from "@/lib/useGitHubRelease";
 import type { GuideMeta, NewsMeta } from "@/lib/content";
 
 interface NavbarClientProps {
@@ -66,6 +68,7 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
 
   const latestGuide = guides[0];
   const latestNews = news[0];
+  const release = useGitHubRelease();
 
   return (
     <motion.header
@@ -178,7 +181,21 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
           <a
-            href={SITE_CONFIG.downloadUrl}
+            href={SITE_CONFIG.repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/[0.1] bg-white/[0.03] hover:bg-white/[0.07] text-[#d1d5db] hover:text-[#f0f0f4] text-xs font-medium transition-colors"
+          >
+            <Star className="w-3.5 h-3.5 text-amber-300" />
+            <span>Star</span>
+            {release.stars !== null && (
+              <span className="text-[11px] text-[#9496a0] pl-0.5">
+                {release.stars}
+              </span>
+            )}
+          </a>
+          <a
+            href={release.downloadUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#f0f0f4] text-[#0d0e12] text-xs font-semibold hover:bg-white transition-colors"

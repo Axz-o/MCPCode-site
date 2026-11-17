@@ -3,14 +3,16 @@
 import React, { useRef } from "react";
 import Link from "next/link";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
-import { Download, BookOpen, Lock, CheckCircle2, Cpu } from "lucide-react";
+import { Download, BookOpen, Lock, CheckCircle2, Cpu, Star } from "lucide-react";
 import { SITE_CONFIG } from "@/lib/site";
+import { useGitHubRelease } from "@/lib/useGitHubRelease";
 import { AuroraHeroFrame } from "./AuroraHeroFrame";
 import { MicoMascot } from "./MicoMascot";
 
 export function Hero() {
   const ref = useRef<HTMLDivElement>(null);
   const prefersReduced = useReducedMotion();
+  const release = useGitHubRelease();
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
@@ -87,7 +89,7 @@ export function Hero() {
           className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto mb-8"
         >
           <a
-            href={SITE_CONFIG.downloadUrl}
+            href={release.downloadUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#f0f0f4] text-[#0d0e12] text-sm font-semibold hover:bg-white transition-colors shadow-[0_0_24px_rgba(255,255,255,0.14)]"
@@ -102,6 +104,18 @@ export function Hero() {
             <BookOpen className="w-4 h-4 text-[#9496a0]" />
             Setup Guide
           </Link>
+          <a
+            href={SITE_CONFIG.repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full border border-white/[0.12] bg-white/[0.03] hover:bg-white/[0.07] text-[#f0f0f4] text-sm font-medium transition-colors"
+          >
+            <Star className="w-4 h-4 text-amber-300" />
+            <span>Star on GitHub</span>
+            {release.stars !== null && (
+              <span className="text-xs text-[#9496a0]">{release.stars}</span>
+            )}
+          </a>
         </motion.div>
 
         <motion.div

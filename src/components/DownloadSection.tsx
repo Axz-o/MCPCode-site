@@ -14,8 +14,10 @@ import {
   Bell,
   ChevronDown,
   Package,
+  Star,
 } from "lucide-react";
 import { SITE_CONFIG, withBasePath } from "@/lib/site";
+import { formatBytes, useGitHubRelease } from "@/lib/useGitHubRelease";
 
 type PlatformId = "windows" | "macos" | "linux";
 type WindowsPackage = "installer" | "portable";
@@ -152,12 +154,24 @@ export function DownloadSection() {
   const [winPkg, setWinPkg] = useState<WindowsPackage>("installer");
   const [showVerify, setShowVerify] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [downloadedPrompt, setDownloadedPrompt] = useState(false);
   const prefersReduced = useReducedMotion();
+  const release = useGitHubRelease();
 
   const activePlatform =
     PLATFORMS.find((p) => p.id === selectedPlatform) ?? PLATFORMS[0];
   const ActiveIcon = activePlatform.Icon;
-  const activePkg = WINDOWS_PACKAGES[winPkg];
+  const activePkg =
+    winPkg === "installer"
+      ? {
+          ...WINDOWS_PACKAGES.installer,
+          filename: release.filename ?? WINDOWS_PACKAGES.installer.filename,
+          size: release.sizeBytes
+            ? formatBytes(release.sizeBytes)
+            : WINDOWS_PACKAGES.installer.size,
+          command: `Invoke-WebRequest "${release.downloadUrl}" -OutFile "${release.filename ?? "MCP-Code-Setup.exe"}"`,
+        }
+      : WINDOWS_PACKAGES.portable;
 
   const handleCopyCommand = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -347,15 +361,33 @@ export function DownloadSection() {
                         <a
                           href={
                             winPkg === "installer"
-                              ? SITE_CONFIG.downloadUrl
-                              : SITE_CONFIG.releasesUrl
+                              ? release.downloadUrl
+                              : release.releaseUrl
                           }
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => setDownloadedPrompt(true)}
                           className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#f0f0f4] text-[#0d0e12] text-sm font-semibold hover:bg-white transition-colors shadow-[0_0_24px_rgba(255,255,255,0.14)]"
                         >
                           <Download className="w-4 h-4" />
-                          Download for Windows
+                          {release.isDirectAsset
+                            ? `Download ${release.tag}`
+                            : "Download for Windows"}
+                        </a>
+
+                        <a
+                          href={SITE_CONFIG.repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-white/[0.12] bg-white/[0.03] hover:bg-white/[0.07] text-sm font-medium text-[#f0f0f4] transition-colors"
+                        >
+                          <Star className="w-4 h-4 text-amber-300" />
+                          <span>Star on GitHub</span>
+                          {release.stars !== null && (
+                            <span className="text-xs text-[#9496a0]">
+                              {release.stars}
+                            </span>
+                          )}
                         </a>
 
                         <Link
@@ -366,6 +398,24 @@ export function DownloadSection() {
                           Setup Guide
                         </Link>
                       </div>
+
+                      {downloadedPrompt && (
+                        <div className="rounded-xl border border-amber-400/20 bg-amber-500/[0.06] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#d1d5db]">
+                          <span>
+                            Thanks for downloading MCP Code. If it helps your
+                            workflow, star the repo on GitHub.
+                          </span>
+                          <a
+                            href={SITE_CONFIG.repoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-medium text-amber-300 hover:text-amber-200"
+                          >
+                            <Star className="w-3.5 h-3.5" />
+                            Star Axz-o/MCPCode
+                          </a>
+                        </div>
+                      )}
 
                       {/* Expandable PowerShell / Releases snippet */}
                       <div>
