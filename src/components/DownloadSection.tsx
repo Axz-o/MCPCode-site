@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
-  Download,
   ArrowRight,
   Check,
   Copy,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { SITE_CONFIG, withBasePath } from "@/lib/site";
 import { formatBytes, useGitHubRelease } from "@/lib/useGitHubRelease";
+import { DownloadButton } from "./DownloadButton";
 
 type PlatformId = "windows" | "macos" | "linux";
 type WindowsPackage = "installer" | "portable";
@@ -358,22 +358,10 @@ export function DownloadSection() {
                     {/* Primary Download CTA + Release link */}
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-3">
-                        <a
-                          href={
-                            winPkg === "installer"
-                              ? release.downloadUrl
-                              : release.releaseUrl
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => setDownloadedPrompt(true)}
-                          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#f0f0f4] text-[#0d0e12] text-sm font-semibold hover:bg-white transition-colors shadow-[0_0_24px_rgba(255,255,255,0.14)]"
-                        >
-                          <Download className="w-4 h-4" />
-                          {release.isDirectAsset
-                            ? `Download ${release.tag}`
-                            : "Download for Windows"}
-                        </a>
+                        <DownloadButton
+                          label="Download for Windows"
+                          onDownloadTriggered={() => setDownloadedPrompt(true)}
+                        />
 
                         <a
                           href={SITE_CONFIG.repoUrl}
@@ -399,23 +387,31 @@ export function DownloadSection() {
                         </Link>
                       </div>
 
-                      {downloadedPrompt && (
-                        <div className="rounded-xl border border-amber-400/20 bg-amber-500/[0.06] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#d1d5db]">
-                          <span>
-                            Thanks for downloading MCP Code. If it helps your
-                            workflow, star the repo on GitHub.
-                          </span>
-                          <a
-                            href={SITE_CONFIG.repoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 font-medium text-amber-300 hover:text-amber-200"
+                      <AnimatePresence>
+                        {downloadedPrompt && (
+                          <motion.div
+                            initial={prefersReduced ? false : { opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                            className="rounded-xl border border-amber-400/20 bg-amber-500/[0.06] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#d1d5db]"
                           >
-                            <Star className="w-3.5 h-3.5" />
-                            Star Axz-o/MCPCode
-                          </a>
-                        </div>
-                      )}
+                            <span>
+                              Checking complete. If MCP Code helps your workflow,
+                              star the repo on GitHub.
+                            </span>
+                            <a
+                              href={SITE_CONFIG.repoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 font-medium text-amber-300 hover:text-amber-200"
+                            >
+                              <Star className="w-3.5 h-3.5" />
+                              Star Axz-o/MCPCode
+                            </a>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
                       {/* Expandable PowerShell / Releases snippet */}
                       <div>

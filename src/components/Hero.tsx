@@ -3,10 +3,11 @@
 import React, { useRef } from "react";
 import Link from "next/link";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
-import { Download, BookOpen, Lock, CheckCircle2, Cpu, Star } from "lucide-react";
+import { BookOpen, Lock, CheckCircle2, Cpu, Star } from "lucide-react";
 import { SITE_CONFIG } from "@/lib/site";
 import { useGitHubRelease } from "@/lib/useGitHubRelease";
 import { AuroraHeroFrame } from "./AuroraHeroFrame";
+import { DownloadButton } from "./DownloadButton";
 import { MicoMascot } from "./MicoMascot";
 
 export function Hero() {
@@ -88,15 +89,7 @@ export function Hero() {
           transition={{ duration: 0.4, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto mb-8"
         >
-          <a
-            href={release.downloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#f0f0f4] text-[#0d0e12] text-sm font-semibold hover:bg-white transition-colors shadow-[0_0_24px_rgba(255,255,255,0.14)]"
-          >
-            <Download className="w-4 h-4" />
-            Download for Windows
-          </a>
+          <DownloadButton label="Download for Windows" />
           <Link
             href="/guides/connect-chatgpt/"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white/[0.12] bg-white/[0.03] hover:bg-white/[0.07] text-[#f0f0f4] text-sm font-medium transition-colors"

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { SITE_CONFIG, withBasePath } from "@/lib/site";
 import { useGitHubRelease } from "@/lib/useGitHubRelease";
+import { DownloadButton } from "./DownloadButton";
 import type { GuideMeta, NewsMeta } from "@/lib/content";
 
 interface NavbarClientProps {
@@ -194,15 +195,7 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
               </span>
             )}
           </a>
-          <a
-            href={release.downloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#f0f0f4] text-[#0d0e12] text-xs font-semibold hover:bg-white transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Download
-          </a>
+          <DownloadButton label="Download" compact />
         </div>
 
         <button

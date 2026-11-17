@@ -54,6 +54,80 @@ export function formatBytes(bytes: number | null): string {
   return `${mb.toFixed(1)} MB`;
 }
 
+export async function resolveLatestStableDownload(): Promise<{
+  url: string;
+  tag: string;
+  filename: string | null;
+  isDirectAsset: boolean;
+}> {
+  try {
+    // 1. Check latest stable release first
+    const latestRes = await fetch(
+      "https://api.github.com/repos/Axz-o/MCPCode/releases/latest",
+      { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" }
+    );
+    if (latestRes.ok) {
+      const rel = (await latestRes.json()) as GitHubRelease;
+      const asset = pickWindowsAsset(rel.assets);
+      if (asset) {
+        return {
+          url: asset.browser_download_url,
+          tag: rel.tag_name || `v${SITE_CONFIG.version}`,
+          filename: asset.name,
+          isDirectAsset: true,
+        };
+      }
+      return {
+        url: rel.html_url || SITE_CONFIG.releasesUrl,
+        tag: rel.tag_name || `v${SITE_CONFIG.version}`,
+        filename: null,
+        isDirectAsset: false,
+      };
+    }
+
+    // 2. Fallback to newest release with a Windows installer asset
+    const listRes = await fetch(
+      "https://api.github.com/repos/Axz-o/MCPCode/releases?per_page=5",
+      { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" }
+    );
+    if (listRes.ok) {
+      const releases = (await listRes.json()) as GitHubRelease[];
+      const match =
+        releases.find((r) => !r.prerelease && pickWindowsAsset(r.assets)) ??
+        releases.find((r) => pickWindowsAsset(r.assets)) ??
+        releases[0];
+      if (match) {
+        const asset = pickWindowsAsset(match.assets);
+        return {
+          url: asset?.browser_download_url ?? match.html_url,
+          tag: match.tag_name || `v${SITE_CONFIG.version}`,
+          filename: asset?.name ?? null,
+          isDirectAsset: Boolean(asset),
+        };
+      }
+    }
+  } catch {
+    // Network / private repo fallback
+  }
+
+  return {
+    url: SITE_CONFIG.releasesUrl,
+    tag: `v${SITE_CONFIG.version}`,
+    filename: null,
+    isDirectAsset: false,
+  };
+}
+
+export function triggerFileDownload(url: string, filename?: string | null) {
+  const link = document.createElement("a");
+  link.href = url;
+  if (filename) link.download = filename;
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 export function useGitHubRelease(): ReleaseInfo {
   const [info, setInfo] = useState<ReleaseInfo>(DEFAULT_INFO);
 
