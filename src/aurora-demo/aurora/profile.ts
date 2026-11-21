@@ -13,9 +13,65 @@ export const PROFILE_COLORS = [
 ] as const
 
 const PROFILE_KEY = 'mcp-code.aurora.profile.v1'
+const ONBOARDING_KEY = 'mcp-code.aurora.onboarding.v1'
+
 const DEFAULT_PROFILE: LocalProfile = {
-  name: 'Local Developer',
+  name: 'Developer',
   color: PROFILE_COLORS[0],
+}
+
+export type OnboardingState = {
+  completed: boolean
+  skipped: boolean
+  completedAt: string
+}
+
+export function hasSavedProfile(): boolean {
+  try {
+    return Boolean(localStorage.getItem(PROFILE_KEY))
+  } catch {
+    return false
+  }
+}
+
+export function loadOnboardingState(): OnboardingState | null {
+  try {
+    const raw = localStorage.getItem(ONBOARDING_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    return {
+      completed: Boolean((parsed as { completed?: unknown }).completed),
+      skipped: Boolean((parsed as { skipped?: unknown }).skipped),
+      completedAt: String((parsed as { completedAt?: unknown }).completedAt ?? ''),
+    }
+  } catch {
+    return null
+  }
+}
+
+export function saveOnboardingState(skipped: boolean): OnboardingState {
+  const next: OnboardingState = {
+    completed: true,
+    skipped,
+    completedAt: new Date().toISOString(),
+  }
+  try {
+    localStorage.setItem(ONBOARDING_KEY, JSON.stringify(next))
+  } catch {
+    // Ignore storage quota issues
+  }
+  return next
+}
+
+export function shouldShowInitialOnboarding(hasExistingWorkspaceData: boolean): boolean {
+  const recorded = loadOnboardingState()
+  if (recorded?.completed) return false
+  if (hasSavedProfile() || hasExistingWorkspaceData) {
+    saveOnboardingState(false)
+    return false
+  }
+  return true
 }
 
 export function loadLocalProfile(): LocalProfile {
@@ -58,7 +114,7 @@ export function profileInitials(name: string): string {
     .trim()
     .split(/\s+/)
     .filter(Boolean)
-  if (parts.length === 0) return 'LD'
+  if (parts.length === 0) return 'D'
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
   return `${parts[0][0] ?? ''}${parts[parts.length - 1][0] ?? ''}`.toUpperCase()
 }

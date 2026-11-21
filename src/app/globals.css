@@ -303,6 +303,11 @@ body {
   animation-play-state: paused;
 }
 
+.aurora-hero-embed .aurora-onboarding,
+.aurora-hero-embed .aurora-welcome-bar {
+  position: absolute;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

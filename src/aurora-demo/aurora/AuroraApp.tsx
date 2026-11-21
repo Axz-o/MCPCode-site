@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getVersion, invoke, getCurrentWindow, open as openDialog } from '../tauri-shim'
 import { withBasePath } from '@/lib/site'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import {
   ArrowLeft, ArrowRight, CircleHelp, FolderKanban, MessageCircle,
   Minus, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
   Settings2, Square, UserRound, X
 } from 'lucide-react'
-import { addedProjectId, call, type Snapshot, type TunnelConfig, type TunnelDiagnoseResult, type TunnelStatus } from '../api'
+import { addedProjectId, call, type AppUpdateInfo, type Snapshot, type TunnelConfig, type TunnelDiagnoseResult, type TunnelStatus } from '../api'
 import { loadAppearance, saveAppearance, type ProjectColor, type ProjectIconName } from '../appearance'
 import { getProjectAppearance, loadProjectAppearances, saveProjectAppearances } from '../projectAppearance'
 import {
@@ -16,7 +16,12 @@ import {
 } from './AuroraPanels'
 import { ConversationView } from './ConversationView'
 import { AuroraTooltipLayer } from './AuroraTooltip'
+import { OnboardingFlow } from './OnboardingFlow'
 import { ProjectContextMenu, type ProjectMenuState } from './ProjectContextMenu'
+import {
+  hasSavedProfile, loadLocalProfile, loadOnboardingState, profileInitials,
+  saveLocalProfile, saveOnboardingState, type LocalProfile
+} from './profile'
 import {
   readApprovedChanges, readMessages, readPendingChanges, readProjects, readWorkspaceMeta,
   type AuroraMessage, type AuroraProject, type AuroraWorkspaceMeta,
@@ -92,6 +97,28 @@ export default function AuroraApp() {
   const [rail, setRail] = useState<RailSection>('chats')
   const [projectOpen, setProjectOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [profile, setProfile] = useState<LocalProfile>(loadLocalProfile)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [replayingIntro, setReplayingIntro] = useState(false)
+  const [welcomeName, setWelcomeName] = useState<string | null>(null)
+  const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null)
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
+
+  const checkUpdates = useCallback(async () => {
+    setCheckingUpdate(true)
+    try {
+      const result = await call<AppUpdateInfo>('check_app_update')
+      setUpdateInfo(result)
+    } catch {
+      // Ignore update check failures when offline
+    } finally {
+      setCheckingUpdate(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void checkUpdates()
+  }, [checkUpdates])
   const [settingsTab, setSettingsTab] = useState<SettingsTab>('appearance')
   const [appVersion, setAppVersion] = useState('0.1.0')
   const [drafts, setDrafts] = useState<Record<number, string>>({})
@@ -162,6 +189,10 @@ export default function AuroraApp() {
       if (seq !== refreshSeqRef.current) return
       const currentTarget = activeProjectIdRef.current
       const list = Array.isArray(nextSnapshot.projects) ? nextSnapshot.projects : []
+      if (!replayingIntro && list.length > 0 && !loadOnboardingState()?.completed) {
+        saveOnboardingState(false)
+        setShowOnboarding(false)
+      }
       const resolvedId =
         currentTarget !== null && list.some(item => item.id === currentTarget)
           ? currentTarget
@@ -746,8 +777,35 @@ export default function AuroraApp() {
     inspectorOpen ? 'aurora-workspace-with-inspector' : '',
   ].filter(Boolean).join(' ')
 
+  function handleCompleteOnboarding(nextProfile: LocalProfile) {
+    const saved = saveLocalProfile(nextProfile)
+    setProfile(saved)
+    saveOnboardingState(false)
+    setReplayingIntro(false)
+    setShowOnboarding(false)
+    setWelcomeName(saved.name)
+    setRail('chats')
+  }
+
+  function handleSkipOnboarding() {
+    const saved = saveLocalProfile(loadLocalProfile())
+    setProfile(saved)
+    saveOnboardingState(true)
+    setReplayingIntro(false)
+    setShowOnboarding(false)
+    setWelcomeName(null)
+    setRail('chats')
+  }
+
+  function handleReplayIntro() {
+    setReplayingIntro(true)
+    setWelcomeName(null)
+    setShowOnboarding(true)
+  }
+
   return (
-    <div className="aurora" data-theme={theme} data-reduced={reduced ? 'true' : 'false'}>
+    <LayoutGroup>
+      <div className="aurora" data-theme={theme} data-reduced={reduced ? 'true' : 'false'}>
       <div className="aurora-chrome">
         <div className="aurora-chrome-left">
           <div className="aurora-chrome-brand">
@@ -870,6 +928,9 @@ export default function AuroraApp() {
                       />
                     )}
                     <Icon size={19} strokeWidth={1.75} />
+                    {id === 'help' && updateInfo?.update_available && (
+                      <span className="aurora-rail-dot" aria-label="Update available" />
+                    )}
                   </button>
                 )
               })}
@@ -890,7 +951,22 @@ export default function AuroraApp() {
                     transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }}
                   />
                 )}
-                <UserRound size={19} strokeWidth={1.75} />
+                {!showOnboarding ? (
+                  <motion.span
+                    layoutId={reduced ? undefined : 'onboarding-profile-avatar'}
+                    className="aurora-rail-profile-avatar"
+                    style={{ background: profile.color }}
+                    transition={
+                      reduced
+                        ? { duration: 0.15 }
+                        : { type: 'spring', duration: 0.55, bounce: 0.16 }
+                    }
+                  >
+                    {profileInitials(profile.name)}
+                  </motion.span>
+                ) : (
+                  <UserRound size={19} strokeWidth={1.75} />
+                )}
                 <span className="aurora-rail-status-dot" data-online={chatStatus?.configured || meta.serverState === 'running' ? 'true' : 'false'} />
               </button>
             </div>
@@ -1088,6 +1164,10 @@ export default function AuroraApp() {
             key="help"
             version={appVersion}
             reduced={reduced}
+            updateInfo={updateInfo}
+            checkingUpdate={checkingUpdate}
+            onCheckUpdate={() => void checkUpdates()}
+            onReplayIntro={handleReplayIntro}
             onClose={() => setHelpOpen(false)}
           />
         )}
@@ -1127,7 +1207,55 @@ export default function AuroraApp() {
           )
         })()}
       </AnimatePresence>
+      <AnimatePresence>
+        {welcomeName && rail === 'chats' && !showOnboarding && (
+          <motion.div
+            key="welcome-banner"
+            className="aurora-welcome-bar"
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+            transition={{ duration: reduced ? 0.14 : 0.22, ease: [0.23, 1, 0.32, 1] }}
+          >
+            <span className="aurora-welcome-text">Welcome, {welcomeName}</span>
+            <div className="aurora-welcome-actions">
+              <button
+                type="button"
+                className="aurora-welcome-setup"
+                onClick={() => {
+                  setWelcomeName(null)
+                  setSettingsTab('connections')
+                  setRail('settings')
+                  pushNav(projectId, 'settings')
+                }}
+              >
+                Set up MCP
+              </button>
+              <button
+                type="button"
+                className="aurora-welcome-dismiss"
+                aria-label="Dismiss welcome message"
+                onClick={() => setWelcomeName(null)}
+              >
+                <X size={13} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingFlow
+            key="onboarding"
+            initialProfile={profile}
+            reduced={reduced}
+            onComplete={handleCompleteOnboarding}
+            onSkip={handleSkipOnboarding}
+          />
+        )}
+      </AnimatePresence>
       <AuroraTooltipLayer reduced={reduced} />
     </div>
+    </LayoutGroup>
   )
 }

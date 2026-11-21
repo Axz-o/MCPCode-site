@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { open as openDialog, openUrl } from '../tauri-shim'
+import { invoke, open as openDialog, openUrl } from '../tauri-shim'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   ArrowLeft, BookOpen, Bot, Cable, Check, ChevronDown, ChevronsUpDown, Code2, Copy,
   ExternalLink, Folder, Globe, Layers3, Palette, Plus, RefreshCw, Search,
   Server, ShieldCheck, Terminal, X
 } from 'lucide-react'
-import type { Snapshot, TunnelConfig, TunnelDiagnoseResult, TunnelStatus } from '../api'
+import type { AppUpdateInfo, Snapshot, TunnelConfig, TunnelDiagnoseResult, TunnelStatus } from '../api'
 import { MicoAvatar } from '../MicoAvatar'
 import { DiffReviewList } from './DiffReview'
 import type {
@@ -19,11 +19,19 @@ import {
 } from './profile'
 
 const REPO_URL = 'https://github.com/Axz-o/MCPCode'
-const GUIDES_URL = 'https://github.com/Axz-o/MCPCode#readme'
+const GUIDES_URL = 'https://axz-o.github.io/MCPCode-site/guides/'
+const CONNECT_CHATGPT_GUIDE_URL = 'https://axz-o.github.io/MCPCode-site/guides/connect-chatgpt/'
+const CHATGPT_PLUGINS_URL = 'https://chatgpt.com/plugins'
 const TUNNEL_GUIDE_URL = 'https://developers.openai.com/api/docs/guides/secure-mcp-tunnels'
 const TUNNEL_RUNTIME_KEYS_URL = 'https://platform.openai.com/settings/organization/tunnels'
 
 async function openExternal(url: string) {
+  try {
+    await invoke('open_external_url', { url })
+    return
+  } catch {
+    // Fallback for non-Tauri browser preview or older binary
+  }
   try {
     await openUrl(url)
   } catch {
@@ -665,10 +673,18 @@ export function ModelEffortSelector({
 export function HelpPopover({
   version,
   reduced,
+  updateInfo,
+  checkingUpdate,
+  onCheckUpdate,
+  onReplayIntro,
   onClose,
 }: {
   version: string
   reduced: boolean
+  updateInfo: AppUpdateInfo | null
+  checkingUpdate: boolean
+  onCheckUpdate: () => void
+  onReplayIntro: () => void
   onClose: () => void
 }) {
   const [copied, setCopied] = useState(false)
@@ -703,7 +719,55 @@ export function HelpPopover({
           <span>v{version}</span>
         </div>
 
+        {updateInfo?.update_available ? (
+          <div className="aurora-update-card">
+            <div className="aurora-update-card-head">
+              <span className="aurora-update-dot" />
+              <strong>Update available: {updateInfo.latest_version}</strong>
+            </div>
+            <button
+              type="button"
+              className="aurora-update-download-btn"
+              onClick={() => void openExternal(updateInfo.download_url || updateInfo.release_url)}
+            >
+              <span>Download update</span>
+              <ExternalLink size={12} />
+            </button>
+          </div>
+        ) : (
+          <div className="aurora-rail-sheet-foot">
+            <button
+              type="button"
+              className="aurora-popover-action"
+              disabled={checkingUpdate}
+              onClick={onCheckUpdate}
+            >
+              <RefreshCw size={14} className={checkingUpdate ? 'aurora-spin' : undefined} />
+              <span>
+                {checkingUpdate
+                  ? 'Checking for updates…'
+                  : updateInfo?.checked
+                    ? `Up to date (v${version})`
+                    : updateInfo?.error
+                      ? 'Update check unavailable'
+                      : 'Check for updates'}
+              </span>
+            </button>
+          </div>
+        )}
+
         <div className="aurora-rail-sheet-foot">
+          <button
+            type="button"
+            className="aurora-popover-action"
+            onClick={() => {
+              onClose()
+              onReplayIntro()
+            }}
+          >
+            <RefreshCw size={14} />
+            <span>Replay introduction</span>
+          </button>
           <button type="button" className="aurora-popover-action" onClick={copyVersion}>
             {copied ? <Check size={14} /> : <Copy size={14} />}
             <span>{copied ? `Copied v${version}` : 'Copy version'}</span>
@@ -1248,6 +1312,7 @@ export function AuroraSettingsPage({
   const [tunnelSetupOpen, setTunnelSetupOpen] = useState(false)
   const [tunnelAdvancedOpen, setTunnelAdvancedOpen] = useState(false)
   const [tunnelDiagDetailsOpen, setTunnelDiagDetailsOpen] = useState(false)
+  const [guidedSetupOpen, setGuidedSetupOpen] = useState(() => !meta.clientSeen)
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false)
   const [providerPanelOpen, setProviderPanelOpen] = useState(false)
   const [selectedProviderId, setSelectedProviderId] = useState<ProviderId | null>(null)
@@ -1661,6 +1726,124 @@ export function AuroraSettingsPage({
                     <RefreshCw size={13} />
                   </button>
                 </div>
+
+                {/* Guided Setup Tutorial Card */}
+                <section className="aurora-settings-card aurora-guided-card">
+                  <div className="aurora-guided-head">
+                    <div className="aurora-guided-head-copy">
+                      <div className="aurora-guided-title-row">
+                        <strong>Quick Setup: Connect ChatGPT</strong>
+                        <span className="aurora-guided-badge" data-ready={mcpRunning && tunnelConnected ? 'true' : 'false'}>
+                          {mcpRunning && tunnelConnected ? 'Ready to pair' : `${(mcpRunning ? 1 : 0) + (tunnelConnected ? 1 : 0)}/2 local ready`}
+                        </span>
+                      </div>
+                      <small>Follow these steps or open the full illustrated guide in your browser.</small>
+                    </div>
+                    <div className="aurora-guided-head-actions">
+                      <button
+                        type="button"
+                        className="aurora-btn-secondary"
+                        onClick={() => void openExternal(CONNECT_CHATGPT_GUIDE_URL)}
+                      >
+                        <BookOpen size={13} />
+                        <span>Full guide</span>
+                        <ExternalLink size={11} />
+                      </button>
+                      <button
+                        type="button"
+                        className="aurora-btn-ghost"
+                        aria-expanded={guidedSetupOpen}
+                        onClick={() => setGuidedSetupOpen(v => !v)}
+                      >
+                        {guidedSetupOpen ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {guidedSetupOpen && (
+                    <div className="aurora-guided-steps">
+                      <div className="aurora-guided-step" data-done={mcpRunning ? 'true' : 'false'}>
+                        <span className="aurora-guided-num">{mcpRunning ? <Check size={12} /> : '1'}</span>
+                        <div className="aurora-guided-step-body">
+                          <strong>Start Local MCP</strong>
+                          <small>{mcpRunning ? `Running on ${mcpEndpoint}` : 'Starts the local MCP server on port 8765.'}</small>
+                        </div>
+                        {!mcpRunning && (
+                          <button
+                            type="button"
+                            className="aurora-btn-primary"
+                            disabled={actionBusy}
+                            onClick={() => onToggleMcp(parsedPort)}
+                          >
+                            Start MCP
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="aurora-guided-step" data-done={tunnelConnected ? 'true' : 'false'}>
+                        <span className="aurora-guided-num">{tunnelConnected ? <Check size={12} /> : '2'}</span>
+                        <div className="aurora-guided-step-body">
+                          <strong>Connect Secure Tunnel</strong>
+                          <small>
+                            {tunnelConnected
+                              ? 'Tunnel is connected and forwarding to Local MCP.'
+                              : 'Create a tunnel in OpenAI Platform, paste your Tunnel Runtime API Key below, then Start tunnel.'}
+                          </small>
+                        </div>
+                        <div className="aurora-guided-step-actions">
+                          <button
+                            type="button"
+                            className="aurora-btn-secondary"
+                            onClick={() => void openExternal(TUNNEL_RUNTIME_KEYS_URL)}
+                          >
+                            <span>OpenAI Tunnels</span>
+                            <ExternalLink size={11} />
+                          </button>
+                          {!tunnelConnected && (
+                            <button
+                              type="button"
+                              className="aurora-btn-ghost"
+                              onClick={() => setTunnelSetupOpen(true)}
+                            >
+                              Configure
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="aurora-guided-step" data-done={meta.clientSeen ? 'true' : 'false'}>
+                        <span className="aurora-guided-num">{meta.clientSeen ? <Check size={12} /> : '3'}</span>
+                        <div className="aurora-guided-step-body">
+                          <strong>Add MCP Code in ChatGPT Web</strong>
+                          <small>Open ChatGPT Connectors, choose Tunnel, and connect with No authentication.</small>
+                        </div>
+                        <button
+                          type="button"
+                          className="aurora-btn-secondary"
+                          onClick={() => void openExternal(CHATGPT_PLUGINS_URL)}
+                        >
+                          <span>Open ChatGPT</span>
+                          <ExternalLink size={11} />
+                        </button>
+                      </div>
+
+                      <div className="aurora-guided-step" data-done="false">
+                        <span className="aurora-guided-num">4</span>
+                        <div className="aurora-guided-step-body">
+                          <strong>Pair Mico & send your first task</strong>
+                          <small>Go back to Chat, click Connect ChatGPT, and enter the pairing code in the Mico widget.</small>
+                        </div>
+                        <button
+                          type="button"
+                          className="aurora-btn-primary"
+                          onClick={onBack}
+                        >
+                          Go to Chat
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
 
                 <section className="aurora-settings-card aurora-connections-card">
                   {/* 1. Local MCP */}

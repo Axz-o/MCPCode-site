@@ -211,6 +211,71 @@
   background: var(--a-line-strong);
 }
 
+.aurora-rail-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #34d399;
+  box-shadow: 0 0 0 2px var(--a-rail);
+}
+
+.aurora-update-card {
+  margin: 0 8px 8px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  background: rgba(52, 211, 153, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aurora-update-card-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--a-text);
+}
+
+.aurora-update-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #34d399;
+  flex-shrink: 0;
+}
+
+.aurora-update-download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: rgba(52, 211, 153, 0.14);
+  color: var(--a-text);
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 140ms ease;
+}
+
+.aurora-update-download-btn:hover {
+  background: rgba(52, 211, 153, 0.22);
+}
+
+.aurora-spin {
+  animation: auroraSpin 900ms linear infinite;
+}
+
+@keyframes auroraSpin {
+  to { transform: rotate(360deg); }
+}
+
 .aurora-rail-button {
   position: relative;
   display: grid;
@@ -4001,6 +4066,417 @@
 
 .aurora-applied-row-stats {
   margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ─── Onboarding & Local Profile Intro ─────────────────────────────────── */
+
+.aurora-rail-profile-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.aurora-onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--a-frame);
+  color: var(--a-text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.aurora-onboarding-brand {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--a-secondary);
+  user-select: none;
+}
+
+.aurora-onboarding-brand img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.aurora-onboarding-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.aurora-onboarding-step {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.aurora-onboarding-stage {
+  height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.aurora-onboarding-liquid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aurora-onboarding-liquid-blob {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aurora-onboarding-orb-wrap {
+  width: 92px;
+  height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aurora-onboarding-orb,
+.aurora-onboarding-mico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aurora-onboarding-avatar-stage {
+  height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.aurora-onboarding-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.aurora-onboarding-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--a-text);
+}
+
+.aurora-onboarding-copy {
+  margin: 0 0 22px;
+  max-width: 340px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--a-muted);
+}
+
+.aurora-onboarding-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.aurora .aurora-onboarding-input {
+  width: 100%;
+  max-width: 280px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--a-line-strong);
+  background: var(--a-surface);
+  color: var(--a-text);
+  font-size: 13.5px;
+  text-align: center;
+  transition: border-color 140ms ease;
+}
+
+.aurora .aurora-onboarding-input:focus {
+  border: 1px solid var(--a-accent);
+}
+
+.aurora-onboarding-swatches {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aurora-onboarding-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  padding: 0;
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+
+.aurora-onboarding-swatch.is-active {
+  border-color: var(--a-text);
+  transform: scale(1.12);
+}
+
+.aurora-onboarding-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.aurora-onboarding-primary {
+  min-width: 168px;
+  padding: 9px 22px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--a-text);
+  color: var(--a-frame);
+  font-size: 13px;
+  font-weight: 600;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.aurora-onboarding-primary:hover {
+  opacity: 0.92;
+}
+
+.aurora-onboarding-skip {
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--a-muted);
+  font-size: 12px;
+  transition: color 140ms ease;
+}
+
+.aurora-onboarding-skip:hover {
+  color: var(--a-text);
+}
+
+.aurora-welcome-bar {
+  position: fixed;
+  top: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--a-line-strong);
+  background: var(--a-popover);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.aurora-welcome-text {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--a-text);
+}
+
+.aurora-welcome-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aurora-welcome-setup {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--a-line-strong);
+  background: var(--a-surface);
+  color: var(--a-text);
+  font-size: 11.5px;
+  font-weight: 500;
+  transition: background 140ms ease;
+}
+
+.aurora-welcome-setup:hover {
+  background: var(--a-surface-raised);
+}
+
+.aurora-welcome-dismiss {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--a-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aurora-welcome-dismiss:hover {
+  color: var(--a-text);
+}
+
+/* ─── Guided ChatGPT Setup Card ────────────────────────────────────────── */
+
+.aurora-guided-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aurora-guided-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.aurora-guided-head-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.aurora-guided-head-copy small {
+  font-size: 12px;
+  color: var(--a-muted);
+}
+
+.aurora-guided-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aurora-guided-title-row strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--a-text);
+}
+
+.aurora-guided-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--a-line-strong);
+  background: var(--a-surface);
+  color: var(--a-muted);
+}
+
+.aurora-guided-badge[data-ready='true'] {
+  border-color: rgba(52, 211, 153, 0.35);
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+
+.aurora-guided-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aurora-guided-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--a-line);
+}
+
+.aurora-guided-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--a-line);
+  background: var(--a-surface);
+}
+
+.aurora-guided-step[data-done='true'] {
+  border-color: rgba(52, 211, 153, 0.25);
+  background: rgba(52, 211, 153, 0.05);
+}
+
+.aurora-guided-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--a-line-strong);
+  background: var(--a-frame);
+  color: var(--a-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.aurora-guided-step[data-done='true'] .aurora-guided-num {
+  border-color: rgba(52, 211, 153, 0.45);
+  background: rgba(52, 211, 153, 0.18);
+  color: #34d399;
+}
+
+.aurora-guided-step-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aurora-guided-step-body strong {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--a-text);
+}
+
+.aurora-guided-step-body small {
+  font-size: 11.5px;
+  color: var(--a-muted);
+}
+
+.aurora-guided-step-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
 }
 

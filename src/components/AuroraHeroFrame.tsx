@@ -12,5 +12,9 @@ const AuroraApp = dynamic(() => import("@/aurora-demo/aurora/AuroraApp"), {
 });
 
 export function AuroraHeroFrame() {
-  return <AuroraApp />;
+  return (
+    <div className="aurora-hero-embed w-full h-full relative overflow-hidden">
+      <AuroraApp />
+    </div>
+  );
 }

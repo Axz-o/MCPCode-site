@@ -5,6 +5,10 @@ export async function getVersion(): Promise<string> {
 }
 
 export async function invoke<T = unknown>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  if (cmd === 'open_external_url' && args && typeof args.url === 'string') {
+    await openUrl(args.url)
+    return undefined as T
+  }
   return handleDemoTunnelInvoke(cmd, args) as T
 }
 

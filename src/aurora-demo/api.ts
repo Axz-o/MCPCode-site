@@ -116,6 +116,17 @@ export interface TunnelDiagnoseResult {
   exit_code: number | null
 }
 
+export interface AppUpdateInfo {
+  checked: boolean
+  update_available: boolean
+  current_version: string
+  latest_version: string | null
+  download_url: string | null
+  release_url: string
+  prerelease: boolean
+  error: string | null
+}
+
 export type BackendValue =
   | string
   | number
@@ -459,6 +470,17 @@ export function handleDemoTunnelInvoke(cmd: string, args: Record<string, unknown
 
 export async function call<T>(method: string, params: BackendParams = {}): Promise<T> {
   switch (method) {
+    case 'check_app_update':
+      return {
+        checked: true,
+        update_available: false,
+        current_version: state.version,
+        latest_version: `v${state.version}-alpha`,
+        download_url: null,
+        release_url: 'https://github.com/Axz-o/MCPCode/releases',
+        prerelease: false,
+        error: null,
+      } satisfies AppUpdateInfo as T
     case 'snapshot':
       return buildSnapshot() as T
     case 'start_mcp':

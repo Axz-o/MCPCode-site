@@ -7,7 +7,7 @@ readingTime: "6 min"
 badge: "Setup Guide"
 ---
 
-This guide walks you through connecting **MCP Code (v0.1.0 beta)** to **ChatGPT Web** so you can send coding tasks from Mico, run them through your ChatGPT session, and review every proposed file edit locally in **Approvals** before it touches disk.
+This guide walks you through connecting **MCP Code (v0.1.0 Alpha)** to **ChatGPT Web** so you can send coding tasks from Mico, run them through your ChatGPT session, and review every proposed file edit locally in **Approvals** before it touches disk.
 
 ## Before you start
 
@@ -25,8 +25,8 @@ Make sure you have:
 MCP Code exposes your local workspace through a built-in Model Context Protocol server running on your machine.
 
 1. Open **MCP Code** and click the **Settings** icon in the left sidebar.
-2. Open the **Connections** tab.
-3. Locate the **Local MCP** card. By default, MCP Code binds the local server to port `8765` (`http://127.0.0.1:8765/mcp`).
+2. Open the **Connections** tab. You will see the **Quick Setup: Connect ChatGPT** card at the top, which tracks your progress and provides direct buttons to open OpenAI Tunnels and ChatGPT.
+3. Locate the **Local MCP** card (or click **Start MCP** in Quick Setup). By default, MCP Code binds the local server to port `8765` (`http://127.0.0.1:8765/mcp`).
 4. If the server is not already active, click **Start Local MCP**.
 
 ![MCP Code Settings Connections showing Local MCP](/screenshots/settings-connections.png)
