@@ -8,13 +8,13 @@ import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "News",
-  description: "Release notes, beta announcements, and product updates for MCP Code.",
+  description: "Release notes, alpha announcements, and product updates for MCP Code.",
   alternates: {
     canonical: absoluteUrl("/news/"),
   },
   openGraph: {
     title: "News — MCP Code",
-    description: "Release notes, beta announcements, and product updates for MCP Code.",
+    description: "Release notes, alpha announcements, and product updates for MCP Code.",
     url: absoluteUrl("/news/"),
     type: "website",
   },
@@ -33,7 +33,7 @@ export default function NewsIndexPage() {
               News
             </h1>
             <p className="text-sm sm:text-base text-[#9496a0] max-w-2xl leading-relaxed">
-              Updates, beta releases, and engineering notes from MCP Code, newest first.
+              Updates, alpha releases, and engineering notes from MCP Code, newest first.
             </p>
           </div>
 

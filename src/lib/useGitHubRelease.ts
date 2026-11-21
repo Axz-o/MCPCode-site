@@ -3,217 +3,88 @@
 import { useEffect, useState } from "react";
 import { SITE_CONFIG } from "./site";
 
-interface GitHubAsset {
-  name: string;
-  browser_download_url: string;
-  size: number;
+interface GitHubAsset { name: string; browser_download_url: string; size: number }
+interface GitHubRelease { tag_name: string; html_url: string; draft: boolean; prerelease: boolean; assets: GitHubAsset[]; published_at: string | null }
+export interface ReleaseInfo { downloadUrl: string; releaseUrl: string; tag: string | null; filename: string | null; sizeBytes: number | null; stars: number | null; isDirectAsset: boolean; accessRestricted: boolean; checked: boolean }
+
+const API = "https://api.github.com/repos/Axz-o/MCPCode";
+const CACHE_KEY = "mcpcode_gh_release_v3";
+const FALLBACK: ReleaseInfo = { downloadUrl: SITE_CONFIG.releasesUrl, releaseUrl: SITE_CONFIG.releasesUrl, tag: null, filename: null, sizeBytes: null, stars: null, isDirectAsset: false, accessRestricted: false, checked: false };
+let activeRequest: Promise<ReleaseInfo> | null = null;
+let lastResult: { at: number; data: ReleaseInfo } | null = null;
+
+function isRelease(value: unknown): value is GitHubRelease {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<GitHubRelease>;
+  return typeof item.tag_name === "string" && typeof item.html_url === "string" && Array.isArray(item.assets) && !item.draft;
 }
 
-interface GitHubRelease {
-  tag_name: string;
-  html_url: string;
-  prerelease: boolean;
-  assets: GitHubAsset[];
+function installer(assets: GitHubAsset[]): GitHubAsset | null {
+  const valid = assets.filter(asset => typeof asset.name === "string" && typeof asset.browser_download_url === "string" && asset.browser_download_url.startsWith("https://github.com/Axz-o/MCPCode/releases/download/"));
+  return valid.find(asset => /(?:setup|installer)[^/]*\.exe$/i.test(asset.name)) ?? valid.find(asset => /\.msi$/i.test(asset.name)) ?? null;
 }
 
-export interface ReleaseInfo {
-  downloadUrl: string;
-  releaseUrl: string;
-  tag: string;
-  filename: string | null;
-  sizeBytes: number | null;
-  stars: number | null;
-  isDirectAsset: boolean;
+function chooseRelease(value: unknown): GitHubRelease | null {
+  if (!Array.isArray(value)) return null;
+  const candidates = value.filter(isRelease).filter(release => installer(release.assets));
+  candidates.sort((a, b) => (Date.parse(b.published_at ?? "") || 0) - (Date.parse(a.published_at ?? "") || 0));
+  return candidates[0] ?? null;
 }
 
-const CACHE_KEY = "mcpcode_gh_release_v1";
-
-const DEFAULT_INFO: ReleaseInfo = {
-  downloadUrl: SITE_CONFIG.downloadUrl,
-  releaseUrl: "https://github.com/Axz-o/MCPCode/releases/tag/v0.1.0-alpha",
-  tag: "v0.1.0-alpha",
-  filename: "MCP.Code_0.1.0_x64-setup.exe",
-  sizeBytes: 25421544,
-  stars: null,
-  isDirectAsset: true,
-};
-
-function pickWindowsAsset(assets: GitHubAsset[]): GitHubAsset | null {
-  if (!Array.isArray(assets) || assets.length === 0) return null;
-  return (
-    assets.find((a) => /setup.*\.exe$/i.test(a.name)) ??
-    assets.find((a) => /\.exe$/i.test(a.name)) ??
-    assets.find((a) => /\.msi$/i.test(a.name)) ??
-    null
-  );
+export function formatBytes(bytes: number | null): string | null {
+  return bytes && bytes > 0 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : null;
 }
 
-export function formatBytes(bytes: number | null): string {
-  if (!bytes || bytes <= 0) return "~25 MB";
-  const mb = bytes / (1024 * 1024);
-  return `${mb.toFixed(1)} MB`;
-}
-
-export async function resolveLatestStableDownload(): Promise<{
-  url: string;
-  tag: string;
-  filename: string | null;
-  isDirectAsset: boolean;
-}> {
-  try {
-    // 1. Check latest stable release first
-    const latestRes = await fetch(
-      "https://api.github.com/repos/Axz-o/MCPCode/releases/latest",
-      { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" }
-    );
-    if (latestRes.ok) {
-      const rel = (await latestRes.json()) as GitHubRelease;
-      const asset = pickWindowsAsset(rel.assets);
-      if (asset) {
-        return {
-          url: asset.browser_download_url,
-          tag: rel.tag_name || `v${SITE_CONFIG.version}`,
-          filename: asset.name,
-          isDirectAsset: true,
-        };
+async function loadRelease(): Promise<ReleaseInfo> {
+  if (lastResult && Date.now() - lastResult.at < 5 * 60_000) return lastResult.data;
+  if (activeRequest) return activeRequest;
+  activeRequest = (async () => {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) ?? "null") as { at: number; data: ReleaseInfo } | null;
+      if (cached?.data?.isDirectAsset && Date.now() - cached.at < 5 * 60_000) {
+        lastResult = cached;
+        return cached.data;
       }
-      return {
-        url: rel.html_url || SITE_CONFIG.releasesUrl,
-        tag: rel.tag_name || `v${SITE_CONFIG.version}`,
-        filename: null,
-        isDirectAsset: false,
+    } catch { /* Storage is optional. */ }
+
+    let next: ReleaseInfo = { ...FALLBACK, checked: true };
+    try {
+      const [releaseResponse, repoResponse] = await Promise.all([
+        fetch(`${API}/releases?per_page=30`, { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" }),
+        fetch(API, { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" }),
+      ]);
+      const release = releaseResponse.ok ? chooseRelease(await releaseResponse.json()) : null;
+      const asset = release ? installer(release.assets) : null;
+      const repo = repoResponse.ok ? await repoResponse.json() as { stargazers_count?: number } : null;
+      next = {
+        downloadUrl: asset?.browser_download_url ?? SITE_CONFIG.releasesUrl,
+        releaseUrl: release?.html_url ?? SITE_CONFIG.releasesUrl,
+        tag: release?.tag_name ?? null,
+        filename: asset?.name ?? null,
+        sizeBytes: typeof asset?.size === "number" ? asset.size : null,
+        stars: typeof repo?.stargazers_count === "number" ? repo.stargazers_count : null,
+        isDirectAsset: Boolean(asset),
+        accessRestricted: releaseResponse.status === 404 && repoResponse.status === 404,
+        checked: true,
       };
-    }
-
-    // 2. Fallback to newest release with a Windows installer asset
-    const listRes = await fetch(
-      "https://api.github.com/repos/Axz-o/MCPCode/releases?per_page=5",
-      { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" }
-    );
-    if (listRes.ok) {
-      const releases = (await listRes.json()) as GitHubRelease[];
-      const match =
-        releases.find((r) => !r.prerelease && pickWindowsAsset(r.assets)) ??
-        releases.find((r) => pickWindowsAsset(r.assets)) ??
-        releases[0];
-      if (match) {
-        const asset = pickWindowsAsset(match.assets);
-        return {
-          url: asset?.browser_download_url ?? match.html_url,
-          tag: match.tag_name || `v${SITE_CONFIG.version}`,
-          filename: asset?.name ?? null,
-          isDirectAsset: Boolean(asset),
-        };
-      }
-    }
-  } catch {
-    // Network / private repo fallback
+      if (asset) try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data: next })); } catch { /* Storage is optional. */ }
+    } catch { /* Keep the releases-page fallback. */ }
+    lastResult = { at: Date.now(), data: next };
+    return next;
+  })();
+  try {
+    return await activeRequest;
+  } finally {
+    activeRequest = null;
   }
-
-  return {
-    url: SITE_CONFIG.releasesUrl,
-    tag: `v${SITE_CONFIG.version}`,
-    filename: null,
-    isDirectAsset: false,
-  };
-}
-
-export function triggerFileDownload(url: string, filename?: string | null) {
-  const link = document.createElement("a");
-  link.href = url;
-  if (filename) link.download = filename;
-  link.rel = "noopener noreferrer";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
 }
 
 export function useGitHubRelease(): ReleaseInfo {
-  const [info, setInfo] = useState<ReleaseInfo>(DEFAULT_INFO);
-
+  const [info, setInfo] = useState<ReleaseInfo>(FALLBACK);
   useEffect(() => {
     let cancelled = false;
-
-    try {
-      const cached = sessionStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached) as { ts: number; data: ReleaseInfo };
-        if (Date.now() - parsed.ts < 5 * 60 * 1000 && parsed.data) {
-          setInfo(parsed.data);
-          return;
-        }
-      }
-    } catch {
-      // Ignore storage errors
-    }
-
-    async function load() {
-      let stars: number | null = null;
-      let next: ReleaseInfo = { ...DEFAULT_INFO };
-
-      try {
-        const [repoRes, relRes] = await Promise.all([
-          fetch("https://api.github.com/repos/Axz-o/MCPCode", {
-            headers: { Accept: "application/vnd.github+json" },
-          }),
-          fetch("https://api.github.com/repos/Axz-o/MCPCode/releases?per_page=5", {
-            headers: { Accept: "application/vnd.github+json" },
-          }),
-        ]);
-
-        if (repoRes.ok) {
-          const repoJson = (await repoRes.json()) as { stargazers_count?: number };
-          if (typeof repoJson.stargazers_count === "number") {
-            stars = repoJson.stargazers_count;
-          }
-        }
-
-        if (relRes.ok) {
-          const releases = (await relRes.json()) as GitHubRelease[];
-          const preferred =
-            releases.find((r) => !r.prerelease && pickWindowsAsset(r.assets)) ??
-            releases.find((r) => pickWindowsAsset(r.assets)) ??
-            releases[0];
-
-          if (preferred) {
-            const asset = pickWindowsAsset(preferred.assets);
-            next = {
-              downloadUrl: asset?.browser_download_url ?? preferred.html_url,
-              releaseUrl: preferred.html_url,
-              tag: preferred.tag_name || DEFAULT_INFO.tag,
-              filename: asset?.name ?? null,
-              sizeBytes: asset?.size ?? null,
-              stars,
-              isDirectAsset: Boolean(asset),
-            };
-          } else {
-            next.stars = stars;
-          }
-        } else {
-          next.stars = stars;
-        }
-      } catch {
-        // Keep fallback values
-      }
-
-      if (!cancelled) {
-        setInfo(next);
-        try {
-          sessionStorage.setItem(
-            CACHE_KEY,
-            JSON.stringify({ ts: Date.now(), data: next })
-          );
-        } catch {
-          // Ignore storage errors
-        }
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
+    void loadRelease().then(result => { if (!cancelled) setInfo(result); });
+    return () => { cancelled = true; };
   }, []);
-
   return info;
 }

@@ -80,7 +80,7 @@ const PLATFORMS: PlatformConfig[] = [
       "Keychain integration for API & tunnel keys",
       "Full Local MCP and Approvals support",
     ],
-    unavailableNote: "macOS builds will follow after the Windows beta.",
+    unavailableNote: "macOS builds will follow after the Windows alpha.",
   },
   {
     id: "linux",
@@ -97,7 +97,7 @@ const PLATFORMS: PlatformConfig[] = [
       "Secret Service keyring integration",
       "Full Local MCP and Approvals support",
     ],
-    unavailableNote: "Linux packaging will follow after the Windows beta.",
+    unavailableNote: "Linux packaging will follow after the Windows alpha.",
   },
 ];
 
@@ -127,8 +127,8 @@ export function DownloadSection() {
           />
 
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.1] bg-white/[0.03] text-xs text-[#d1d5db] mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span>{release.tag}</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${release.isDirectAsset ? "bg-emerald-400" : "bg-[#8b8e98]"}`} />
+            <span>{release.tag ?? (release.accessRestricted ? "v0.1.0 Alpha · private release" : release.checked ? SITE_CONFIG.releaseTag : "Checking releases…")}</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-semibold text-[#f0f0f4] tracking-[-0.028em] mb-3">
@@ -202,12 +202,12 @@ export function DownloadSection() {
                       </h3>
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
-                          activePlatform.available
+                          activePlatform.available && release.isDirectAsset
                             ? "bg-emerald-500/15 border-emerald-400/25 text-emerald-300"
                             : "bg-white/[0.05] border-white/[0.1] text-[#9496a0]"
                         }`}
                       >
-                        {activePlatform.statusLabel}
+                          {activePlatform.id === "windows" && !release.isDirectAsset ? (release.accessRestricted ? "0.1 Alpha" : release.checked ? "Check releases" : "Checking…") : activePlatform.statusLabel}
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-[#9496a0]">
@@ -217,9 +217,19 @@ export function DownloadSection() {
                 </div>
 
                 {activePlatform.available ? (
-                  <div className="flex flex-wrap items-center gap-3">
+                  <div className="space-y-3">
+                    <p className="text-xs text-[#b4b7c2]">
+                      {release.isDirectAsset
+                        ? `${release.tag} · ${release.filename}${release.sizeBytes ? ` · ${(release.sizeBytes / 1048576).toFixed(1)} MB` : ""}`
+                        : !release.checked
+                          ? "Checking the current Windows installer on GitHub…"
+                          : release.accessRestricted
+                          ? "Installers are in a private repository. GitHub access is required to view or download them."
+                          : "No public Windows installer was confirmed. Check GitHub Releases for availability."}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
                     <DownloadButton label="Download for Windows" />
-                    <a
+                    {release.stars !== null && <a
                       href={SITE_CONFIG.repoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -227,12 +237,9 @@ export function DownloadSection() {
                     >
                       <Star className="w-4 h-4 text-amber-300" />
                       <span>Star on GitHub</span>
-                      {release.stars !== null && (
-                        <span className="text-xs text-[#9496a0]">
-                          {release.stars}
-                        </span>
-                      )}
-                    </a>
+                      <span className="text-xs text-[#9496a0]">{release.stars}</span>
+                    </a>}
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -287,7 +294,7 @@ export function DownloadSection() {
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-[#9496a0]">
           <Link
-            href="/news/mcp-code-v0-1-0-beta/"
+            href="/news/mcp-code-v0-1-0-alpha/"
             className="hover:text-[#f0f0f4] transition-colors"
           >
             Release Notes

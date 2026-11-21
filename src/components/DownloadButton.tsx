@@ -34,7 +34,7 @@ export function DownloadButton({
       } ${className}`}
     >
       <Download className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
-      <span>{label}</span>
+      <span>{release.isDirectAsset ? label : release.accessRestricted ? "Private releases" : "View releases"}</span>
     </motion.a>
   );
 }

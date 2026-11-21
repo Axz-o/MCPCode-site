@@ -79,12 +79,12 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
       className={`fixed top-0 inset-x-0 z-50 transition-colors duration-200 ${
         scrolled || mobileOpen
           ? "bg-[#0d0e12]/90 backdrop-blur-xl border-b border-white/[0.08]"
-          : "bg-[#0d0e12]/55 backdrop-blur-md border-b border-transparent"
+          : "bg-[#0d0e12]/35 backdrop-blur-md border-b border-transparent"
       }`}
     >
       <div
         ref={navRef}
-        className="relative max-w-6xl mx-auto px-5 md:px-8 h-14 flex items-center justify-between gap-4"
+        className="relative max-w-6xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between gap-4"
         onMouseLeave={scheduleClose}
       >
         {/* Brand: real Aurora squircle app icon */}
@@ -99,8 +99,9 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
           <span className="text-sm font-semibold text-[#f0f0f4] tracking-tight">
             {SITE_CONFIG.name}
           </span>
-          <span className="hidden sm:inline-flex items-center text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.1] text-[#9496a0] leading-none">
-            v{SITE_CONFIG.version}
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-full bg-white/[0.05] border border-white/[0.09] text-[#a8aab4] leading-none">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
+            {release.tag ?? SITE_CONFIG.releaseTag}
           </span>
         </Link>
 
@@ -124,7 +125,7 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
           <button
             type="button"
             onMouseEnter={() => openDropdown("guides")}
-            onClick={() => setOpenMenu(openMenu === "guides" ? null : "guides")}
+            onClick={() => openDropdown("guides")}
             aria-expanded={openMenu === "guides"}
             className={`inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
               openMenu === "guides" || isActive("/guides/")
@@ -143,7 +144,7 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
           <button
             type="button"
             onMouseEnter={() => openDropdown("news")}
-            onClick={() => setOpenMenu(openMenu === "news" ? null : "news")}
+            onClick={() => openDropdown("news")}
             aria-expanded={openMenu === "news"}
             className={`inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
               openMenu === "news" || isActive("/news/")
@@ -181,7 +182,7 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
 
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
-          <a
+          {release.stars !== null && <a
             href={SITE_CONFIG.repoUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -189,12 +190,8 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
           >
             <Star className="w-3.5 h-3.5 text-amber-300" />
             <span>Star</span>
-            {release.stars !== null && (
-              <span className="text-[11px] text-[#9496a0] pl-0.5">
-                {release.stars}
-              </span>
-            )}
-          </a>
+            <span className="text-[11px] text-[#9496a0] pl-0.5">{release.stars}</span>
+          </a>}
           <DownloadButton label="Download" compact />
         </div>
 
@@ -219,7 +216,7 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: 4, scale: 0.985 }}
               transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-              className="hidden md:block absolute left-1/2 -translate-x-1/2 top-[calc(100%+8px)] w-[640px] max-w-[calc(100vw-2rem)] rounded-2xl border border-white/[0.12] bg-[#13151b] shadow-[0_28px_80px_rgba(0,0,0,0.88),0_0_0_1px_rgba(255,255,255,0.03)] overflow-hidden"
+              className="hidden md:block absolute left-1/2 -translate-x-1/2 top-[calc(100%+8px)] w-[540px] max-w-[calc(100vw-2rem)] rounded-2xl border border-white/[0.12] bg-[#13151b] shadow-[0_28px_80px_rgba(0,0,0,0.88)] overflow-hidden"
             >
               {openMenu === "guides" && (
                 <div>
@@ -238,35 +235,13 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
                     </Link>
                   </div>
 
-                  <div className="p-3.5 grid grid-cols-12 gap-3.5">
-                    {latestGuide && (
-                      <Link
-                        href={`/guides/${latestGuide.slug}/`}
-                        onClick={() => setOpenMenu(null)}
-                        className="col-span-5 rounded-xl border border-white/[0.09] bg-[#0d0e12] overflow-hidden flex flex-col justify-between group hover:border-white/[0.18] transition-colors"
-                      >
-                        <div className="relative h-28 overflow-hidden border-b border-white/[0.07]">
-                          <img
-                            src={withBasePath("/screenshots/settings-tunnel.png")}
-                            alt="Settings Connections and Secure Tunnel in MCP Code"
-                            className="w-full h-full object-cover object-top opacity-90 group-hover:scale-[1.03] transition-transform duration-300"
-                          />
-                          <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-[#0d0e12]/90 border border-white/[0.12] text-[10px] font-medium text-emerald-300">
-                            Featured guide
-                          </span>
-                        </div>
-                        <div className="p-3">
-                          <div className="text-xs font-semibold text-[#f0f0f4] leading-snug mb-1 group-hover:text-white">
-                            {latestGuide.title}
-                          </div>
-                          <div className="text-[11px] text-[#7d808c]">
-                            {latestGuide.readingTime} · Updated {latestGuide.updatedAt}
-                          </div>
-                        </div>
-                      </Link>
-                    )}
-
-                    <div className="col-span-7 flex flex-col justify-between gap-1">
+                  <div className="p-2.5 space-y-1">
+                    {latestGuide && <Link href={`/guides/${latestGuide.slug}/`} onClick={() => setOpenMenu(null)} className="flex items-center justify-between gap-4 rounded-xl px-3.5 py-3.5 bg-white/[0.045] hover:bg-white/[0.08] transition-colors group">
+                      <span className="min-w-0"><strong className="block text-sm font-semibold text-[#f0f0f4]">{latestGuide.title}</strong><span className="block mt-1 text-xs text-[#a8aab4]">{latestGuide.readingTime} · Complete setup guide</span></span>
+                      <ArrowRight className="w-4 h-4 shrink-0 text-[#9496a0] group-hover:translate-x-0.5 transition-transform" />
+                    </Link>}
+                    <div className="px-3.5 pt-3 pb-1 text-[11px] font-medium text-[#a8aab4]">Jump to a step</div>
+                    <div className="space-y-0.5">
                       {[
                         {
                           title: "1. Start Local MCP (:8765)",
@@ -293,16 +268,16 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
                             key={row.title}
                             href={row.href}
                             onClick={() => setOpenMenu(null)}
-                            className="flex items-start gap-3 p-2.5 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-[#191c24] transition-colors"
+                            className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg hover:bg-white/[0.055] transition-colors"
                           >
-                            <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center border border-white/[0.09] bg-[#1a1d26] text-[#d1d5db]">
+                            <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center bg-white/[0.055] text-[#d1d5db]">
                               <RowIcon className="w-4 h-4" />
                             </div>
                             <div className="min-w-0">
-                              <div className="text-xs font-semibold text-[#f0f0f4] leading-snug mb-0.5">
+                              <div className="text-[13px] font-medium text-[#f0f0f4] leading-snug mb-0.5">
                                 {row.title}
                               </div>
-                              <div className="text-[11px] text-[#8b8e98] line-clamp-1">
+                              <div className="text-xs text-[#a8aab4] leading-snug">
                                 {row.desc}
                               </div>
                             </div>
@@ -341,7 +316,7 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
                         <div className="relative h-28 overflow-hidden border-b border-white/[0.07]">
                           <img
                             src={withBasePath("/screenshots/mico-chat.png")}
-                            alt="MCP Code v0.1.0 Beta"
+                            alt="MCP Code v0.1.0 Alpha"
                             className="w-full h-full object-cover object-top opacity-90 group-hover:scale-[1.03] transition-transform duration-300"
                           />
                           <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-[#0d0e12]/90 border border-white/[0.12] text-[10px] font-medium text-sky-300">
@@ -438,16 +413,7 @@ export function NavbarClient({ guides, news }: NavbarClientProps) {
                 {item.label}
               </Link>
             ))}
-            <a
-              href={SITE_CONFIG.downloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMobileOpen(false)}
-              className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-full bg-[#f0f0f4] text-[#0d0e12] text-sm font-semibold"
-            >
-              <Download className="w-4 h-4" />
-              Download for Windows
-            </a>
+            <DownloadButton label="Download for Windows" className="mt-2 w-full" />
           </motion.div>
         )}
       </AnimatePresence>
