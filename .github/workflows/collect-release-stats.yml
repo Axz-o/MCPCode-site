@@ -1,0 +1,73 @@
+name: Collect Daily Release Stats
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch GitHub Release counters and upsert daily Supabase snapshot
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node -e '
+            (async () => {
+              const supabaseUrl = process.env.SUPABASE_URL;
+              const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+              if (!supabaseUrl || !serviceKey) {
+                throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY repository secrets");
+              }
+
+              const ghRes = await fetch("https://api.github.com/repos/Axz-o/MCPCode/releases?per_page=30", {
+                headers: { Accept: "application/vnd.github+json", "User-Agent": "MCPCode-Stats-Cron" }
+              });
+              if (!ghRes.ok) throw new Error(`GitHub API ${ghRes.status}`);
+              const releases = await ghRes.json();
+
+              const snapshotDate = new Date().toISOString().slice(0, 10);
+              const fetchedAt = new Date().toISOString();
+              const rows = [];
+
+              for (const rel of releases) {
+                if (!rel || rel.draft || !Array.isArray(rel.assets)) continue;
+                for (const asset of rel.assets) {
+                  const lower = String(asset.name || "").toLowerCase();
+                  const ext = lower.endsWith(".exe") ? ".exe" : lower.endsWith(".msi") ? ".msi" : null;
+                  if (!ext) continue;
+                  rows.push({
+                    snapshot_date: snapshotDate,
+                    release_tag: rel.tag_name,
+                    asset_name: asset.name,
+                    asset_ext: ext,
+                    download_count: Number(asset.download_count || 0),
+                    fetched_at: fetchedAt
+                  });
+                }
+              }
+
+              if (rows.length === 0) {
+                console.log("No .exe or .msi assets found.");
+                return;
+              }
+
+              const sbRes = await fetch(`${supabaseUrl.replace(/\/+$/, "")}/rest/v1/release_snapshots?on_conflict=snapshot_date,release_tag,asset_name`, {
+                method: "POST",
+                headers: {
+                  apikey: serviceKey,
+                  Authorization: `Bearer ${serviceKey}`,
+                  "Content-Type": "application/json",
+                  Prefer: "resolution=merge-duplicates,return=representation"
+                },
+                body: JSON.stringify(rows)
+              });
+              if (!sbRes.ok) {
+                throw new Error(`Supabase upsert failed (${sbRes.status}): ${await sbRes.text()}`);
+              }
+              const saved = await sbRes.json();
+              console.log(`Upserted ${saved.length} rows for ${snapshotDate}`);
+            })().catch((err) => { console.error(err); process.exit(1); });
+          '
